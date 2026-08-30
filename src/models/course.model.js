@@ -1,6 +1,11 @@
-import mongoose, {Schema} from "mongoose";
-
+import mongoose, {Schema, SchemaTypeOptions} from "mongoose";
 const courseSchema = new Schema({
+    studentId: {
+            type: Schema.Types.ObjectId,
+            ref: "Student",
+            required: true,
+        },
+        
         courseTitle: {
             type: String,
             required: true,

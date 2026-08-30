@@ -8,6 +8,7 @@ app.use(express.json());
 import studentRouter from "./routes/student.routes.js";
 import courseRouter from "./routes/course.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
+import asyncHandler from "./middleware/asyncHandler.js";
 
 app.use(errorHandler);
 // route declaration

@@ -39,13 +39,20 @@ password: {
 
   department: {
     type: String,
-    required: true
+    required: function () { return this.role !== 'admin'; }
   },
 
   level: {
     type: Number,
-    required: true,
+    required: function () { return this.role !== 'admin';},
     enum: [100, 200, 300, 400]
+  },
+
+  role: {
+    type: String,
+    enum: ["admin", "student", "faculty"],
+    default: "student"
+
   },
 
   isActive: {
@@ -56,7 +63,10 @@ password: {
     {
     timestamps: true //this is used for both createdAt and updatedAt
   }
+
+
 );
+
 /* studentSchema.pre("save"....) is basically saying before mongoose saves this student to mongoDB,
 run this function first*/
 
