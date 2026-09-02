@@ -1,6 +1,6 @@
 //router is used to get routes in express
 import { Router } from "express";
-import { registerStudent, createAdmin, loginStudent, getStudents, getStudent, updateStudent, updateStudentByAdmin, deleteStudent, activeStudent, deactiveStudent } from "../controllers/student.controller.js";
+import { registerStudent, verifyEmail, createAdmin, loginStudent, getStudents, getStudent, updateStudent, updateStudentByAdmin, deleteStudent, activeStudent, deactiveStudent } from "../controllers/student.controller.js";
 import asyncHandler from "../middleware/asyncHandler.js"; 
 import { auth, adminOnly } from "../middleware/auth.middleware.js";
 
@@ -11,6 +11,8 @@ const router = Router();
 //http://localhost:5000/api/v1/posts/update/:id
 // router.route('/register', registerStudent);
 router.post('/register', asyncHandler(registerStudent));
+
+router.post('/verify-email', asyncHandler(verifyEmail))
 
 router.post('/admin', auth, adminOnly, asyncHandler(createAdmin));
 

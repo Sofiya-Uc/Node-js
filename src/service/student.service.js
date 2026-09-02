@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt';
 import { Student } from '../models/student.model.js';
-import sendMail  from '../utils/mail.js';
+import { Token } from '../models/token.model.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import sendMail from '../utils/mail.js';
 
 dotenv.config()
 
@@ -40,6 +41,8 @@ const {studentname, password, email, phone, age, department, level} = data;
             err.statusCode = 400;
             throw err;
         }
+
+        const token = Math.floor(1000 + Math.random()*9000)
         
         const student = await Student.create({
             studentname,
@@ -51,20 +54,59 @@ const {studentname, password, email, phone, age, department, level} = data;
             level,
             loggedIn: false
         });
+
+        const createToken =  await Token.create({
+            studentId: student._id,
+            code: token,
+        });
+
+        await sendMail(email, "Verify email", `Your registration was successful, use this code to verify your email: ${token}`);
         return student;
-    };
+};
+
+const verifyEmail = async(data) => {
+      const {email, code} = data
+
+      const student = await Student.findOne({email})
+
+      if(student.isVerified === true){
+        const err = new Error("Email is already verified");
+        err.statusCode = 400;
+        throw err;
+      }
+
+    //   console.log(`THE STUDENT ID IS ${student._id}`)
+      
+      const storedToken = await Token.findOne({studentId: student._id});
+
+      console.log(`the entered code is ${code}`)
+      console.log(`the stored token ${storedToken.code}`)
+
+      if(code !== storedToken.code){
+        const err = new Error("Invalid Token");
+        err.statusCode = 400;
+        throw err;
+      }
+      student.isVerified = true;
+
+      await student.save()
+
+      await Token.deleteOne({_id: storedToken._id});
+
+      return student;
+};
 
 const createAdmin = async (data) => {
     const {studentname, password, email, age, phone} = data;
     if (!studentname || !password || !email ||!age || !phone) {
-        const err = new Error("All fields are required");
+        const err = new Error("All fields are required");  
         err.statusCode = 400;
         throw err;
     }
      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if(!emailRegex.test(email)) {
-            const err = new Error("Invalid email");
-            err.statusCode = 400
+            const err = new Error("Invalid Email");
+            err.statusCode = 400;
             throw err;
         }
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/; 
@@ -117,6 +159,12 @@ const loginStudent = async (data) => {
                 err.statusCode = 400;
                 throw err;
             }
+
+            if(student.isVerified !== true) {
+                const err = new Error("Email is not verified");
+                err.statusCode = 400;
+                throw err;
+            }
             
             const token = jwt.sign(
                 { id: student._id, email: student.email, role: student.role},
@@ -130,6 +178,8 @@ const getStudents = async(data) => {
     const {search, email, department, level, isActive, page = 1, limit = 10} = data;
      const filter = {};
 
+    filter.role = {$ne: "admin" };
+
 // Search by student name and email
         if (search) {
             filter.$or = [
@@ -141,7 +191,7 @@ const getStudents = async(data) => {
 console.log("Filter being used:", JSON.stringify(filter));
         // filter by department 
         if (department) {
-            filter.department = department;
+            filter.department = { $regex: `^${department}$`, $options: "i" };
         }
         //filter by level
         if (level) {
@@ -158,7 +208,7 @@ console.log("Filter being used:", JSON.stringify(filter));
         const skip = (currentPage - 1) * pageLimit;
         
         // to get all students
-        const student = await Student.findOne(filter)
+        const students = await Student.find(filter)
             .select("-password")
             .skip(skip)
             .limit(pageLimit); 
@@ -168,7 +218,7 @@ console.log("Filter being used:", JSON.stringify(filter));
         // Calculate total pages
         const totalPages = Math.ceil(totalStudents / pageLimit);
     return { 
-        student,
+        students,
         currentPage,
         pageLimit,
         totalStudents,
@@ -191,7 +241,7 @@ const getStudent = async (data) => {
 
 const updateStudent = async (data) => {
     const { id, updates } = data;
-    const allowedFields = ['studentname', 'phone'];
+    const allowedFields = ['studentname', 'phone', 'age'];
 
     const safeUpdates = {};
 
@@ -273,6 +323,7 @@ const deactiveStudent = async (data) => {
 
 const studentService = {
     registerStudent,
+    verifyEmail,
     createAdmin,
     loginStudent,
     getStudents,

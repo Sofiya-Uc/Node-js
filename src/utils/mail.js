@@ -17,6 +17,6 @@ async function sendMail(to, sub, msg) {
     console.log("Email sent")
 };
 
-sendMail("sophiahumphreyu@gmail.com", "Test email", "<p>It workedddddd!!!!</p>");
+//sendMail("sophiahumphreyu@gmail.com", "Test email", "<p>It workedddddd!!!!</p>");
 
 export default sendMail;

@@ -6,13 +6,31 @@ const registerStudent = async (req, res) => {
         const student = await studentService.registerStudent({studentname, password, email, phone, age, department, level});
 
          res.status(201).json({
-            message: "Student registered successfully!",
+            message: "Student registered successfully, check your email for verification code",
             student: {
                 id: student._id, 
                 email: student.email, 
                 studentname: student.studentname}
         }); 
 };
+
+const verifyEmail = async(req, res) => {
+      const {email, code} = req.body;
+
+      if(!email || !code){
+
+      }
+
+      const student = await studentService.verifyEmail({email, code});
+
+      res.status(201).json ({
+        messsage: "Email Verification is successfull!",
+        student
+  
+         });
+};
+
+
 
 const createAdmin = async (req, res) => {
     const {studentname, password, email, age, phone} = req.body;
@@ -45,8 +63,10 @@ const loginStudent = async (req, res) => {
     };
 
 const getStudents = async (req, res) => {
+
+    console.log("this is the stuident")
         const {search, department, level, isActive, page = 1, limit = 10} = req.query;
-        const { student, currentPage, pageLimit,totalStudents, totalPages }  = await studentService.getStudents({
+        const { students, currentPage, pageLimit,totalStudents, totalPages }  = await studentService.getStudents({
             search, department, level, isActive, page, limit});
         
         res.status(200).json ({
@@ -57,7 +77,7 @@ const getStudents = async (req, res) => {
                 totalStudents,
                 totalPages
             },
-            student
+            students
         });
 };
 
@@ -130,6 +150,7 @@ const deactiveStudent = async (req, res) => {
 
 export {
     registerStudent,
+    verifyEmail,
     createAdmin,
     loginStudent,
     getStudents,
